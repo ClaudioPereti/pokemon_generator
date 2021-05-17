@@ -18,7 +18,7 @@ def load_pokemon_image(path = '../../data/raw/pokemon/pokemon/'):
     return array_img_pokemon
 
 
-def load_pokemon_array(path='../../data/processed/',name = 'all_image_pokemon-npy'):
+def load_pokemon_array(path='../../data/processed/',name = 'all_image_pokemon.npy'):
     """load and return array containig 256x256x3 images"""
     
     return np.load(path+name)
