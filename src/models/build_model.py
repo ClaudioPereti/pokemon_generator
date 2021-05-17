@@ -1,6 +1,6 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Layer,Dense,Conv2D,Conv2DTranspose
-
+from tensorflow.keras.layers import Layer,Dense,Conv2D,Conv2DTranspose,Input,Flatten
+from tensorflow.keras.models import Model
 
 class Sampling(layers.Layer):
     """
@@ -28,3 +28,28 @@ class Sampling(layers.Layer):
         epsilon = tf.keras.backend.random_normal(shape=(self.batch, self.dim))
         #reparametrisation trick
         return self.z_mean + tf.exp(0.5 * self.z_log_var) * epsilon
+
+
+def Encoder(latent_dim=40):
+    """
+    Build and return a convolutional encoder
+
+    Args:
+        latent_dim (int): Dimension of the latent rapresentation
+        (default = 40)
+
+    Returns:
+       encoder (Model): Encoder with Convolutional and Dense layers
+    """
+
+    encoder_inputs = Input(shape=( 256, 256, 3))
+    x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(encoder_inputs)
+    x = Conv2D(64, 3, activation="relu", strides=2, padding="same")(x)
+    x = Flatten()(x)
+    x = Dense(200, activation="relu")(x)
+    z_mean = Dense(latent_dim, name="z_mean")(x)
+    z_log_var = Dense(latent_dim, name="z_log_var")(x)
+    z = Sampling()([z_mean, z_log_var])
+    encoder = Model(encoder_inputs, [z_mean, z_log_var, z], name="encoder")
+
+    return encoder
