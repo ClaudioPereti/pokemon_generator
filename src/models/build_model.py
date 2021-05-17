@@ -4,32 +4,17 @@ from tensorflow.keras.models import Model
 from tensorflow import keras
 
 
-class Sampling(layers.Layer):
-    """
-    Sample from a normal distribution with mean: z_mean and sigma: z_log_var
+class Sampling(Layer):
+    """Sample from a normal distribution with mean: z_mean and sigma: z_log_var"""
 
-    Attributes:
-        z_mean (float): Mean of the gaussian distribution
-        z_log_var (float): Variance of the gaussian distribution
-        dim (int): Dimension of the gaussian distribution
-        batch (int): Batch of the sample
-
-    """
-
-    def __init__(self,z_mean,z_log_var):
-        super(Sampling,self).__init__()
-        self.z_mean = z_mean
-        self.z_log_var = z_log_var
-        self.dim = tf.shape(z_mean)[0]
-        self.batch = tf.shape(z_mean)[1]
-
-
-    def call(self):
+    def call(self, inputs):
         """Return a Gaussian distribution with reparametrisation trick"""
+        z_mean, z_log_var = inputs
+        batch = tf.shape(z_mean)[0]
+        dim = tf.shape(z_mean)[1]
+        epsilon = tf.keras.backend.random_normal(shape=(batch, dim))
+        return z_mean + tf.exp(0.5 * z_log_var) * epsilon
 
-        epsilon = tf.keras.backend.random_normal(shape=(self.batch, self.dim))
-        #reparametrisation trick
-        return self.z_mean + tf.exp(0.5 * self.z_log_var) * epsilon
 
 
 def Encoder(latent_dim=40):
@@ -56,8 +41,17 @@ def Encoder(latent_dim=40):
 
     return encoder
 
-def Decoder():
-    """Build and return a convolutional decoder"""
+def Decoder(latent_dim=40):
+    """
+    Build and return a convolutional decoder
+
+    Args:
+        latent_dim (int): Dimension of the latent rapresentation
+        (default = 40)
+
+    Returns:
+       dencoder (Model): Decoder with Convolutional and Dense layers
+       """
 
     latent_inputs = Input(shape=(latent_dim,))
     x = Dense(64 * 64 * 64, activation="relu")(latent_inputs)
