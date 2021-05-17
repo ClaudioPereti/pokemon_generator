@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Layer,Dense,Conv2D,Conv2DTranspose,Input,Flatten
+from tensorflow.keras.layers import Layer,Dense,Conv2D,Conv2DTranspose,Input,Flatten,Reshape
 from tensorflow.keras.models import Model
 
 class Sampling(layers.Layer):
@@ -43,8 +43,8 @@ def Encoder(latent_dim=40):
     """
 
     encoder_inputs = Input(shape=( 256, 256, 3))
-    x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(encoder_inputs)
-    x = Conv2D(64, 3, activation="relu", strides=2, padding="same")(x)
+    x = Conv2D(32, 4, activation="relu", strides=2, padding="same")(encoder_inputs)
+    x = Conv2D(64, 4, activation="relu", strides=2, padding="same")(x)
     x = Flatten()(x)
     x = Dense(200, activation="relu")(x)
     z_mean = Dense(latent_dim, name="z_mean")(x)
@@ -53,3 +53,16 @@ def Encoder(latent_dim=40):
     encoder = Model(encoder_inputs, [z_mean, z_log_var, z], name="encoder")
 
     return encoder
+
+def Decoder():
+    """Build and return a convolutional decoder"""
+
+    latent_inputs = Input(shape=(latent_dim,))
+    x = Dense(64 * 64 * 64, activation="relu")(latent_inputs)
+    x = Reshape((64, 64, 64))(x)
+    x = Conv2DTranspose(64, 4, activation="relu", strides=2, padding="same")(x)
+    x = Conv2DTranspose(32, 4, activation="relu", strides=2, padding="same")(x)
+    decoder_outputs = Conv2DTranspose(1, 3, activation="sigmoid", padding="same")(x)
+    decoder = Model(latent_inputs, decoder_outputs, name="decoder")
+
+    return decoder
