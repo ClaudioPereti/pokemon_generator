@@ -1,20 +1,24 @@
 import sys
+sys.path.append('/home/claudio/machine_learning_project/pokemon_generator/pokemon_env/lib/python3.6/site-packages')
 sys.path.append('../data')
+sys.path.append('../../config')
+import config
+from config import train, train_size, vae_optimizer, encoder, decoder
 from load_data import load_pokemon_array
-import importlib
-importlib.reload(build_model)
 from build_model import VarationalConvAE,Encoder,Decoder
-from sklearn.model_selection import train_test_split
-
-encoder = Encoder()
-decoder = Decoder()
 
 
-vae = VarationalConvAE(encoder,decoder)
 
-vae.compile(optimizer = 'adam')
+# call encoder and decoder
+encoder_model = Encoder(encoder)
+decoder_model = Decoder(decoder)
+
+# call the variation autoencoder
+vae = VarationalConvAE(encoder_model,decoder_model)
+
+
+vae.compile(optimizer = vae_optimizer)
 pokemon_array = load_pokemon_array()
 
-X,X_test = train_test_split(pokemon_array)
-
-vae.fit(pokemon_array,pokemon_array,epochs=50,batch_size=32)
+pokemon_array = pokemon_array[0:train_size,:,:,:]
+vae.fit(pokemon_array,**train)
