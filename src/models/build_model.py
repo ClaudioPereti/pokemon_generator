@@ -2,6 +2,11 @@ import tensorflow as tf
 from tensorflow.keras.layers import Layer,Dense,Conv2D,Conv2DTranspose,Input,Flatten,Reshape
 from tensorflow.keras.models import Model
 from tensorflow import keras
+import sys
+sys.path.append('../../config')
+import config
+from config import encoder as encoder_config, decoder as decoder_config,conv2d_config,dense_config,conv2dtranspose_config
+import functools as ft
 
 
 class Sampling(Layer):
@@ -17,23 +22,29 @@ class Sampling(Layer):
 
 
 
-def Encoder(latent_dim=40):
+def Encoder(encoder_config):
     """
     Build and return a convolutional encoder
 
     Args:
         latent_dim (int): Dimension of the latent rapresentation
-        (default = 40)
+        (default = 200)
 
     Returns:
        encoder (Model): Encoder with Convolutional and Dense layers
     """
 
-    encoder_inputs = Input(shape=( 256, 256, 3))
-    x = Conv2D(32, 4, activation="relu", strides=2, padding="same")(encoder_inputs)
-    x = Conv2D(64, 4, activation="relu", strides=2, padding="same")(x)
+    encoder_inputs = Input(shape=encoder_config['input_shape'])
+    x = Conv2D(encoder_config['filter_conv_layer'][0], encoder_config['kernel_size_conv_layer'][0], activation= encoder_config['activation_conv_layer'][0], strides= encoder_config['stride_conv_layer'][0], padding= encoder_config['padding_conv_layer'][0])(encoder_inputs)
+    for index in range(1,encoder_config['conv_layers']):
+        x = Conv2D(**conv2d_config(filters=encoder_config['filter_conv_layer'][index]))(x)
+
+
     x = Flatten()(x)
-    x = Dense(200, activation="relu")(x)
+    for index in range(encoder_config['dense_layers']):
+        x = Dense(**dense_config(units=encoder_config['node_dense_layer'][index]))(x)
+
+    latent_dim = encoder_config['latent_dim']
     z_mean = Dense(latent_dim, name="z_mean")(x)
     z_log_var = Dense(latent_dim, name="z_log_var")(x)
     z = Sampling()([z_mean, z_log_var])
@@ -41,24 +52,25 @@ def Encoder(latent_dim=40):
 
     return encoder
 
-def Decoder(latent_dim=40):
+def Decoder(decoder_config):
     """
     Build and return a convolutional decoder
 
     Args:
         latent_dim (int): Dimension of the latent rapresentation
-        (default = 40)
+        (default = 200)
 
     Returns:
        dencoder (Model): Decoder with Convolutional and Dense layers
        """
 
-    latent_inputs = Input(shape=(latent_dim,))
-    x = Dense(64 * 64 * 64, activation="relu")(latent_inputs)
-    x = Reshape((64, 64, 64))(x)
-    x = Conv2DTranspose(64, 4, activation="relu", strides=2, padding="same")(x)
-    x = Conv2DTranspose(32, 4, activation="relu", strides=2, padding="same")(x)
-    decoder_outputs = Conv2DTranspose(1, 3, activation="sigmoid", padding="same")(x)
+    latent_inputs = Input(shape=(decoder_config['latent_dim'],))
+    x = Dense(ft.reduce(lambda x,y:x*y,decoder_config['reshape_layer']), activation="relu")(latent_inputs)
+    x = Reshape(decoder_config['reshape_layer'])(x)
+    for index in range(decoder_config['conv_transpose_layers']):
+        x = Conv2DTranspose(**conv2dtranspose_config(filters =decoder_config['filter_conv_transpose_layers'][index]))(x)
+
+    decoder_outputs = Conv2DTranspose(3, 3, activation="sigmoid", padding="same")(x)
     decoder = Model(latent_inputs, decoder_outputs, name="decoder")
 
     return decoder
