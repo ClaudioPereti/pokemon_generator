@@ -1,3 +1,16 @@
+# Path raw images
+path_raw_images = '../../data/raw/pokemon/'
+
+# Path augmented images
+path_augmented_images = '../../data/interim/'
+
+# Generator configuration
+generator = {
+    'path':'../../data/raw/pokemon/',
+    'batch_size':1,
+    'save_path':'../../data/interim/',
+}
+
 # Encoder configuration
 encoder = {
     'input_shape':(256,256,3),
@@ -34,8 +47,8 @@ vae_optimizer = 'adam'
 train_size = 10
 
 train = {
-    'epochs':10,
-    'batch_size':2,
+    'epochs':5,
+    'batch_size':1,
 
 }
 
